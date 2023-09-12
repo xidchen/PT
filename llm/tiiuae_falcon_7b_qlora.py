@@ -1,5 +1,5 @@
-import accelerate
-import bitsandbytes
+# !pip install accelerate bitsandbytes datasets peft transformers trl
+
 import datasets
 import peft
 import torch
