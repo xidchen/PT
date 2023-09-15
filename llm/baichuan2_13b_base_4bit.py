@@ -27,3 +27,12 @@ prediction = model.generate(
     repetition_penalty=1.1,
 )
 print(tokenizer.decode(prediction.cpu()[0], skip_special_tokens=True))
+# 登鹳雀楼->王之涣
+# 夜雨寄北->李商隐
+# 望岳->杜甫
+# 春望->杜甫
+# 石壕吏->杜甫
+# 茅屋为秋风所破歌->杜甫
+# 白雪歌送武判官归京->岑参
+# 早春呈水部张十八员外->韩愈
+# 酬乐天扬州初逢
