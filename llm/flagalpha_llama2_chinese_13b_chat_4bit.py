@@ -5,16 +5,19 @@ import auto_gptq
 import transformers
 
 
-model = auto_gptq.AutoGPTQForCausalLM.from_quantized(
-    model_name_or_path="FlagAlpha/Llama2-Chinese-13b-Chat-4bit",
-    device="cuda:0",
-)
+model_path = "FlagAlpha/Llama2-Chinese-13b-Chat-4bit"
 
 tokenizer = transformers.AutoTokenizer.from_pretrained(
-    pretrained_model_name_or_path="FlagAlpha/Llama2-Chinese-13b-Chat-4bit",
+    pretrained_model_name_or_path=model_path,
     use_fast=False,
 )
 tokenizer.pad_token = tokenizer.eos_token
+
+model = auto_gptq.AutoGPTQForCausalLM.from_quantized(
+    model_name_or_path=model_path,
+    device="cuda:0",
+)
+
 
 input_ids = tokenizer(
     ["<s>Human: 怎么登上火星\n</s><s>Assistant: "],
@@ -38,3 +41,9 @@ generate_ids = model.generate(**generate_input)
 
 text = tokenizer.decode(generate_ids[0])
 print(text)
+# <s>Human: 怎么登上火星
+# </s><s>Assistant: 目前，人类还没有实现登陆火星的能力。
+# 许多国家和机构已经开始了对火星进行研究和发展计划，
+# 但是这些都需要大量时间、金额以及技术支持才可成功完成。
+# 如果你想知道更加细节信息，建议查看相关专业网站或者参与一些科学活动来获取最新消息。
+# </s>
