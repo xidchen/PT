@@ -5,14 +5,16 @@ import torch
 import transformers
 
 
+model_path = "FlagAlpha/Atom-7B"
+
 tokenizer = transformers.AutoTokenizer.from_pretrained(
-    pretrained_model_name_or_path="FlagAlpha/Atom-7B",
+    pretrained_model_name_or_path=model_path,
     use_fast=False,
 )
 tokenizer.pad_token = tokenizer.eos_token
 
 model = transformers.AutoModelForCausalLM.from_pretrained(
-    pretrained_model_name_or_path="FlagAlpha/Atom-7B",
+    pretrained_model_name_or_path=model_path,
     device_map="auto",
     torch_dtype=torch.float16,
     load_in_8bit=True,
