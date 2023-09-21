@@ -1,5 +1,6 @@
 # !pip install accelerate bitsandbytes einops faiss-gpu
 # !pip install langchain sentence-transformers transformers xformers
+# It works on T4 on Colab
 
 import langchain
 import torch
