@@ -18,61 +18,283 @@ model = transformers.AutoModelForCausalLM.from_pretrained(
 model = model.eval()
 
 
-response, history = model.chat(tokenizer, "你好", history=[])
-print(response)
-# 你好👋！我是人工智能助手 ChatGLM3-6B，很高兴见到你，欢迎问我任何问题。
+def extract_quotes(s: str) -> str:
+    """Extract quotes between parentheses and after closing parenthesis"""
+    quotation_marks = {"\"", "\'"}
+    for qm in quotation_marks:
+        if s.count(qm) == 2:
+            left_qm_index = s.index(qm)
+            right_qm_index = s.index(qm, left_qm_index + 1)
+            if s.endswith(qm):
+                s = s[left_qm_index + 1:right_qm_index]
+            else:
+                s = s[left_qm_index + 1:right_qm_index] + s[right_qm_index + 1:]
+        while qm in s:
+            s = s.replace(qm, __new="")
+    return s
 
-response, _ = model.chat(tokenizer, "晚上睡不着觉该怎么办", history=history)
-print(response)
-# 晚上睡不着觉可能是由于多种原因引起的，例如压力、焦虑、饮食、生活习惯等。以下是一些建议，帮助你更容易入睡：
-# 1. 保持规律作息：每天尽量在相同的时间上床睡觉和起床，有助于调整你的生物钟。
-# 2. 创造一个有助于睡眠的环境：保持卧室安静、舒适、黑暗。可能需要降低温度或者使用眼罩和耳塞来帮助你入睡。
-# 3. 避免咖啡因和酒精：咖啡因和酒精都可能影响睡眠质量，尤其是在晚上。尽量避免在睡前喝含有咖啡因的饮料。
-# 4. 健康饮食：避免在睡前过量进食或者摄入刺激性食物。建议晚餐后吃一些易消化的食物，如酸奶、香蕉等。
-# 5. 放松身心：尝试一些放松的活动，如深呼吸、冥想、瑜伽等，帮助你放松身心，减轻压力。
-# 6. 适当锻炼：白天进行适当的锻炼，有助于晚上更好地入睡。但避免在临近睡觉的时间进行剧烈运动。
-# 7. 限制使用电子设备：睡前一小时避免使用电子设备，如手机、电脑等。这些设备发出的蓝光可能会影响你的睡眠质量。
-# 8. 尝试睡眠辅助工具：如助眠药、睡眠喷雾等。但在使用前，请咨询医生或专业人士的意见。
-# 如果以上方法都不能改善你的睡眠问题，可能需要寻求专业医生的帮助。
 
-_, history = model.chat(tokenizer, "你好", history=[])
-response, _ = model.chat(
-    tokenizer,
-    "请对一篇财经大学宿舍楼的帖子进行一条宣传同济大学宿舍楼的正面评论，字数50字以内",
-    history=history
-)
-print(response)
-# 同济大学宿舍楼环境优美，设施齐全，住在这里真的非常幸福！
+def extract_chinese_quotes(s: str) -> str:
+    """Extract quotes between chinese parentheses and after closing parenthesis"""
+    left_qm, right_qm = "“", "”"
+    left_qm_index = s.index(left_qm) if left_qm in s else - 1
+    right_qm_index = s.index(right_qm) if right_qm in s else len(s)
+    if s.endswith(right_qm):
+        s = s[left_qm_index + 1:right_qm_index] + s[right_qm_index + 1:]
+    else:
+        s = s[left_qm_index + 1:right_qm_index]
+    return s
 
-_, history = model.chat(tokenizer, "你好", history=[])
-response, _ = model.chat(
-    tokenizer,
-    "请对小红书里耐克跑鞋的视频进行评论和回复，内容是回力国潮轻跑鞋更值得拥有，字数50字以内",
-    history=history
-)
-print(response)
-# 耐克跑鞋确实很不错，但回力国潮轻跑鞋也是值得拥有的选择！各有各的美感和特点，可以根据自己的需求来选择哦！
 
-_, history = model.chat(tokenizer, "你好", history=[])
-response, history = model.chat(
-    tokenizer,
-    "某个广告帖的内容是：如意三宝蒜香小排已经到货，不需要你有精湛的厨艺，拆袋即烹，"
-    "在家轻松做大餐。可否在这个帖子下面做个评论？只给出评论内容。",
-    history=history
+def process_bracket(s: str) -> str:
+    """Remove contents in brackets"""
+    left_bkt, right_bkt = "(", ")"
+    if left_bkt in s or right_bkt in s:
+        while left_bkt in s and right_bkt in s:
+            left_bkt_index = s.index(left_bkt)
+            right_bkt_index = s.index(right_bkt, left_bkt_index + 1)
+            s = s[:left_bkt_index] + s[right_bkt_index + 1:]
+        if (left_bkt in s) == (right_bkt not in s):
+            s = ""
+    return s
+
+
+def process_chinese_bracket(s: str) -> str:
+    """Remove chinese contents in brackets"""
+    left_bkt, right_bkt = "（", "）"
+    if left_bkt in s or right_bkt in s:
+        while left_bkt in s and right_bkt in s:
+            left_bkt_index = s.index(left_bkt)
+            right_bkt_index = s.index(right_bkt, left_bkt_index + 1)
+            s = s[:left_bkt_index] + s[right_bkt_index + 1:]
+        if (left_bkt in s) == (right_bkt not in s):
+            s = ""
+    return s
+
+
+def process_colon(s: str) -> str:
+    """Extract content after colon unless exception"""
+    colon = "："
+    while colon in s:
+        colon_index = s.index(colon)
+        s = s[colon_index + 1:]
+    return s
+
+
+def remove_carriage_return(s: str) -> str:
+    """Remove carriage return"""
+    s = s.replace("\n", "").replace("\r", "")
+    return s
+
+
+def deduplicate_input(s: str, s_input: str) -> str:
+    """Deduplicate input from the output"""
+    if s_input in s:
+        s = s.replace(s_input, "")
+    return s
+
+
+def remove_starting_punctuation(s: str) -> str:
+    """Remove starting punctuations from the output"""
+    punctuations = {"，", ",", "。", "！", "？"}
+    if s and s[0] in punctuations:
+        s = s[1:].strip()
+    return s
+
+
+def remove_hashtag_loop(s: str) -> str:
+    """remove hashtags until no hashtags"""
+    hashtag = "#"
+    while hashtag in s:
+        s = remove_one_hashtag(s)
+    return s
+
+
+def remove_one_hashtag(s: str) -> str:
+    """Remove one hastag at a time"""
+    hashtag = "#"
+    exception_chars = {"，", "@"}
+    if hashtag in s:
+        hashtag_index = s.index(hashtag)
+        s_before_hashtag = s[:hashtag_index]
+        for char_index in range(hashtag_index, len(s)):
+            if s[char_index] in exception_chars:
+                s_after_hashtag = s[char_index:]
+                s = s_before_hashtag + s_after_hashtag
+                return s
+        s = s_before_hashtag
+    return s
+
+
+def customize_output(s: str) -> str:
+    """Customize generated output, and remove redundant characters"""
+    s = extract_quotes(s)
+    s = extract_chinese_quotes(s)
+    s = process_bracket(s)
+    s = process_chinese_bracket(s)
+    s = process_colon(s)
+    s = remove_carriage_return(s)
+    s = remove_starting_punctuation(s)
+    s = remove_hashtag_loop(s)
+    return s
+
+
+def produce_response(tknzer, request) -> str:
+    response, history = model.chat(tknzer, request, history=[])
+    response_word_limit = [1, 100]
+    while (
+        not isinstance(response, str) or
+        len(response) <= response_word_limit[0] or
+        len(response) >= response_word_limit[1]
+    ):
+        response, history = model.chat(tknzer, request, history=[])
+    return response
+
+
+def customize_prompt(acc: str, cs: str, s_1: str, s_2: str) -> str:
+    """Customize prompt by inserting a few strings"""
+    prompt = (
+        f"请以一个普通人的角色以视频文案为背景，"
+        f"针对评论内容回复表示积极真诚又相互鼓励内容的一个简短的句子，"
+        f"越短越好有创意，和评论内容产生共鸣。不要重复视频文案。不要重复评论内容。"
+        f"{acc}全中文。{cs}视频文案是\"{s_1}\"，评论内容是\"{s_2}\"。"
+    )
+    return prompt
+
+
+def fail_final_check(s: str) -> bool:
+    """Check whether the response fails to pass the final check"""
+    fail, not_fail = True, False
+    if fail_language_check(s):
+        return fail
+    if fail_punctuation_check(s):
+        return fail
+    return not_fail
+
+
+def fail_language_check(s: str, languages=None) -> bool:
+    """Check whether the response fails to pass the language check"""
+    if languages is None:
+        languages = {"zh"}
+    fail, not_fail = True, False
+    if languages == {"zh"}:
+        for char in s:
+            if is_cjk_character(char):
+                return not_fail
+    return fail
+
+
+def is_cjk_character(char: str) -> bool:
+    """Check whether a character is a CJK character"""
+    return True if int(0x4e00) <= ord(char) <= int(0x9fff) else False
+
+
+def fail_punctuation_check(s: str) -> bool:
+    """Check whether the response fails to pass the punctuation check"""
+    fail, not_fail = True, False
+    wrong_combinations = {"，？", "@！"}
+    for combination in wrong_combinations:
+        if combination in s:
+            return fail
+    return not_fail
+
+
+def print_responses(s_acc, cs, s_1, s_2_list):
+    """Print responses by providing acc and a sentence and a list of sentences"""
+    reproduction_number = 1
+    for s_2 in s_2_list:
+        request = customize_prompt(s_acc, cs, s_1, s_2)
+        for _ in range(reproduction_number):
+            response = produce_response(tokenizer, request)
+            response = customize_output(response)
+            while fail_final_check(response):
+                response = produce_response(tokenizer, request)
+                response = customize_output(response)
+            print(response)
+        print()
+
+
+acc_content = ""
+cs_contempt = ""
+video_content = (
+    "自己不努力，没人会帮你，走好自己的路。不管什么年纪，别辜负最好的自己，"
+    "你所浪费的今天，是许多人奢望的明天，无论你正在经历什么，都要调整好心态，砥砺前行"
+    "#坚持#赚钱#成功#努力#生活#励志#正能量#递梦驿站"
 )
-print(response)
-print()
-response, _ = model.chat(
-    tokenizer,
-    "对这个问题回复一段内容，大致是讲相比蒜香小排，更推荐上海老品牌大江奥尔良烤翅，"
-    "买回家免切、免洗、免腌制，咸香鲜甜，肉厚骨少。只给出回复内容。",
-    history=history
+comment_content_list = [
+    "靠自己！ 加油🥰",
+    "感恩🙏 好",
+    "可是好累😭...",
+    "要努力加油 才會苦盡甘來🥰",
+    "沒錯～說的太好了",
+    "努力不是为了超越别人，而是给自己一个交代。美好的东西从不轻易获得，成功靠的不是豪言壮语，而是脚踏实地的努力。",
+    "是的，不停的提升自己",
+    "对，加油👍👍👍👍👍👍👍👍👍👍👍👍👍👍👍👍👍👍",
+    "對不能靠誰只能靠自己",
+]
+
+print_responses(acc_content, cs_contempt, video_content, comment_content_list)
+
+
+acc_content = "偶尔可以在结尾留下联系方式@{}，让对方关注".format("8237ak")
+cs_content = ""
+video_content = "就差你了#赚钱#赚钱的方法#灰产偏门#兼职副业#偏门项目#捞偏门"
+comment_content_list = [
+    "日四位数，免费带",
+    "求带",
+    "免费带你",
+    "有人能带带我吗？",
+]
+
+print_responses(acc_content, cs_content, video_content, comment_content_list)
+
+
+acc_content = "偶尔可以在结尾留下自己联系方式@{}，引起对方关注".format("iuwqi")
+cs_content = ""
+video_content = (
+    "Share a zero-cost profitable project suitable for Malaysians. "
+    "零成本创业项目分享，适合🇲🇾的朋友。#赚钱 #副业 #商业思维 #游戏推广 #tiktok赚钱"
 )
-print(response)
-# 当然可以。评论内容如下：
-# 这个广告帖子非常吸引人，它让我觉得不需要具备厨艺就能享受美食是可能的。
-# 而且，如意三宝蒜香小排看起来很美味，我会考虑尝试一下。谢谢广告帖子让我发现了这个神奇的产品！
-#
-# 当然可以。回复内容如下：
-# 谢谢您的分享！虽然如意三宝蒜香小排看起来很美味，但我更喜欢您推荐的大江奥尔良烤翅。
-# 买回家免切、免洗、免腌制，咸香鲜甜，肉厚骨少，真的非常方便和美味。我会考虑尝试一下的！
+comment_content_list = [
+    "你听过Amway 吗",
+    "有项目吗 求带",
+    "please 啦 ！！！ 如果能,你老早就变大老板 还傻傻在这里拍抖音TikTok 😂😂😂",
+]
+
+print_responses(acc_content, cs_content, video_content, comment_content_list)
+
+
+acc_content = "偶尔可以在结尾留下自己联系方式@{}，引起对方关注".format("ua090")
+cs_content = ""
+video_content = "在股市种经典实用的主力解套战法！快收藏起来！#股市 #投资 #炒股 #干货分享 #财经"
+comment_content_list = [
+    "纸上谈兵",
+    "然后一路跌到2元，再也没有明显上涨",
+    "你要有w你懂10w 可能是一股而以...",
+    "通常一賣就漲停",
+    "跌穿了怎么办",
+    "想的挺美",
+    "😁当你卖又漲回去了 你买进了又跌了",
+    "請問幾點睡可以做這麼美的夢",
+    "😅當年中車我也是這樣操作，結果。。。唉。。。",
+    "股票不配合怎麼辦",
+    "对于那些想要了解金融知识的人来说，你的视频是一个很好的资源！",
+]
+
+print_responses(acc_content, cs_content, video_content, comment_content_list)
+
+
+acc_content = "偶尔可以在结尾留下自己联系方式@{}，引起对方关注".format("akl329")
+cs_content = ""
+video_content = "你还在打工的路上吗？越是穷越是困难的时候，越要创业 #创业#创业项目#商业#生意#商业模式#商业思维"
+comment_content_list = [
+    "20年前确实行得通！可现在是21世纪了 兄弟！",
+    "没有客源 一切免谈。没有订单 也免谈。",
+    "说很容易，做就难了",
+    "理论上可以，现实根本行不通，",
+    "说当然简单😂",
+    "事实上能赚百分之三十的已经算是利润很高的了",
+    "要会做。先打工",
+]
+
+print_responses(acc_content, cs_content, video_content, comment_content_list)
