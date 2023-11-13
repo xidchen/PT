@@ -236,7 +236,7 @@ comment_content_list = [
 print_responses(acc_content, cs_contempt, video_content, comment_content_list)
 
 
-acc_content = "偶尔可以在结尾留下联系方式@{}，让对方关注".format("8237ak")
+acc_content = "偶尔可以在结尾留下联系方式@{}，让对方关注。".format("8237ak")
 cs_content = ""
 video_content = "就差你了#赚钱#赚钱的方法#灰产偏门#兼职副业#偏门项目#捞偏门"
 comment_content_list = [
@@ -249,7 +249,7 @@ comment_content_list = [
 print_responses(acc_content, cs_content, video_content, comment_content_list)
 
 
-acc_content = "偶尔可以在结尾留下自己联系方式@{}，引起对方关注".format("iuwqi")
+acc_content = "偶尔可以在结尾留下自己联系方式@{}，引起对方关注。".format("iuwqi")
 cs_content = ""
 video_content = (
     "Share a zero-cost profitable project suitable for Malaysians. "
@@ -264,7 +264,7 @@ comment_content_list = [
 print_responses(acc_content, cs_content, video_content, comment_content_list)
 
 
-acc_content = "偶尔可以在结尾留下自己联系方式@{}，引起对方关注".format("ua090")
+acc_content = "偶尔可以在结尾留下自己联系方式@{}，引起对方关注。".format("ua090")
 cs_content = ""
 video_content = "在股市种经典实用的主力解套战法！快收藏起来！#股市 #投资 #炒股 #干货分享 #财经"
 comment_content_list = [
@@ -284,7 +284,7 @@ comment_content_list = [
 print_responses(acc_content, cs_content, video_content, comment_content_list)
 
 
-acc_content = "偶尔可以在结尾留下自己联系方式@{}，引起对方关注".format("akl329")
+acc_content = "偶尔可以在结尾留下自己联系方式@{}，引起对方关注。".format("akl329")
 cs_content = ""
 video_content = "你还在打工的路上吗？越是穷越是困难的时候，越要创业 #创业#创业项目#商业#生意#商业模式#商业思维"
 comment_content_list = [
